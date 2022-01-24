@@ -17,6 +17,7 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.conditions import IfCondition
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
@@ -24,8 +25,12 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 
+from nav2_common.launch import HasNodeParams, RewrittenYaml
+
+
 
 def generate_launch_description():
+    use_rviz = LaunchConfiguration('use_rviz', default='true')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     turtlebot3_cartographer_prefix = get_package_share_directory('turtlebot3_cartographer')
     cartographer_config_dir = LaunchConfiguration('cartographer_config_dir', default=os.path.join(
@@ -39,7 +44,56 @@ def generate_launch_description():
     rviz_config_dir = os.path.join(get_package_share_directory('turtlebot3_cartographer'),
                                    'rviz', 'tb3_cartographer.rviz')
 
-    return LaunchDescription([
+    namespace = LaunchConfiguration('namespace')
+    autostart = LaunchConfiguration('autostart')
+    lifecycle_nodes = ['map_saver']
+
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='True',
+        description='Automatically startup the nav2 stack')
+
+    # Nodes launching commands
+
+
+    bringup_dir = get_package_share_directory('nav2_bringup')
+
+    params_file = LaunchConfiguration('params_file')
+
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        description='Full path to the ROS2 parameters file to use for all launched nodes')
+
+    param_substitutions = {
+        'use_sim_time': use_sim_time}
+
+    configured_params = RewrittenYaml(
+        source_file=params_file,
+        root_key=namespace,
+        param_rewrites=param_substitutions,
+        convert_types=True)
+
+    declare_namespace_cmd = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Top-level namespace')
+
+    start_map_saver_server_cmd = Node(
+            package='nav2_map_server',
+            executable='map_saver_server',
+            output='screen',
+            parameters=[configured_params])
+
+    start_lifecycle_manager_cmd = Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_slam',
+            output='screen',
+            parameters=[{'use_sim_time': use_sim_time},
+                        {'autostart': autostart},
+                        {'node_names': lifecycle_nodes}])
+
+    ld = LaunchDescription([
         DeclareLaunchArgument(
             'cartographer_config_dir',
             default_value=cartographer_config_dir,
@@ -50,7 +104,8 @@ def generate_launch_description():
             description='Name of lua file for cartographer'),
         DeclareLaunchArgument(
             'use_sim_time',
-            default_value='false',
+            # default_value='false',
+            default_value='true',
             description='Use simulation (Gazebo) clock if true'),
 
         Node(
@@ -62,10 +117,7 @@ def generate_launch_description():
             arguments=['-configuration_directory', cartographer_config_dir,
                        '-configuration_basename', configuration_basename]),
 
-        DeclareLaunchArgument(
-            'resolution',
-            default_value=resolution,
-            description='Resolution of a grid cell in the published occupancy grid'),
+        
 
         DeclareLaunchArgument(
             'publish_period_sec',
@@ -76,13 +128,11 @@ def generate_launch_description():
             PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/occupancy_grid.launch.py']),
             launch_arguments={'use_sim_time': use_sim_time, 'resolution': resolution,
                               'publish_period_sec': publish_period_sec}.items(),
-        ),
-
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            name='rviz2',
-            arguments=['-d', rviz_config_dir],
-            parameters=[{'use_sim_time': use_sim_time}],
-            output='screen'),
-    ])
+        ),])
+    ld.add_action(declare_autostart_cmd)
+    ld.add_action(start_map_saver_server_cmd)
+    ld.add_action(start_lifecycle_manager_cmd)
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_namespace_cmd)
+    return ld
+    
