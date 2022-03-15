@@ -32,7 +32,7 @@ def generate_launch_description():
                                                   turtlebot3_cartographer_prefix, 'config'))
     configuration_basename = LaunchConfiguration('configuration_basename',
                                                  default='turtlebot3_lds_2d.lua')
-
+    rplidar_ros2_dir = get_package_share_directory('rplidar_ros2')
     resolution = LaunchConfiguration('resolution', default='0.05')
     publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
 
@@ -77,7 +77,13 @@ def generate_launch_description():
             launch_arguments={'use_sim_time': use_sim_time, 'resolution': resolution,
                               'publish_period_sec': publish_period_sec}.items(),
         ),
-
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(rplidar_ros2_dir, 'launch','rplidar_launch.py'))
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['-0.013308', '-0.10685', '-0.0825', '0', '0', '3.14159', 'base_link', 'lidar_link']),
         Node(
             package='rviz2',
             executable='rviz2',
@@ -85,4 +91,11 @@ def generate_launch_description():
             arguments=['-d', rviz_config_dir],
             parameters=[{'use_sim_time': use_sim_time}],
             output='screen'),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments = ['-0.013308', '-0.10685', '-0.0825', '0', '0', '3.14159', 'base_link', 'lidar_link']),
+        Node(
+            package='roborts_base',
+            executable='roborts_base_node'),
     ])

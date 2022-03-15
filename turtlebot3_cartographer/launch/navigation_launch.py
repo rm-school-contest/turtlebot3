@@ -31,7 +31,8 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
-
+    teb_launch_dir = os.path.join(
+        get_package_share_directory('teb_local_planner'), 'launch')
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
                        'planner_server',
@@ -46,8 +47,11 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
-
+                  ('/tf_static', 'tf_static'),
+                  ('scan','base_scan'),
+                  ('scan_filtered','scan')]
+    # remappings = [('/tf', 'tf'),
+    #               ('/tf_static', 'tf_static')]
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
@@ -77,7 +81,8 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'params_file',
-            default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+            # default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+            default_value=os.path.join(teb_launch_dir, 'teb_params_add.yaml'),
             description='Full path to the ROS2 parameters file to use'),
 
         Node(
@@ -135,5 +140,4 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time},
                         {'autostart': autostart},
                         {'node_names': lifecycle_nodes}]),
-
     ])

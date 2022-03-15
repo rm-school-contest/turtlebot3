@@ -43,7 +43,8 @@ def generate_launch_description():
 
     rviz_config_dir = os.path.join(get_package_share_directory('turtlebot3_cartographer'),
                                    'rviz', 'tb3_cartographer.rviz')
-
+    teb_launch_dir = os.path.join(
+        get_package_share_directory('teb_local_planner'), 'launch')
     namespace = LaunchConfiguration('namespace')
     autostart = LaunchConfiguration('autostart')
     lifecycle_nodes = ['map_saver']
@@ -61,7 +62,8 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        # default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        default_value=os.path.join(teb_launch_dir, 'teb_params_add.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     param_substitutions = {
@@ -104,8 +106,8 @@ def generate_launch_description():
             description='Name of lua file for cartographer'),
         DeclareLaunchArgument(
             'use_sim_time',
-            # default_value='false',
-            default_value='true',
+            default_value='false',
+            # default_value='true',
             description='Use simulation (Gazebo) clock if true'),
 
         Node(
@@ -116,7 +118,7 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
             arguments=['-configuration_directory', cartographer_config_dir,
                        '-configuration_basename', configuration_basename]),
-
+        
         
 
         DeclareLaunchArgument(

@@ -1,16 +1,3 @@
-# Copyright (c) 2018 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 import os
 
@@ -24,6 +11,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import PushRosNamespace
 from launch_ros.actions import Node
+from launch.substitutions import PathJoinSubstitution
 from nav2_common.launch import RewrittenYaml
 
 
@@ -31,9 +19,12 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('nav2_bringup')
     launch_dir = os.path.join(bringup_dir, 'launch')
-
+    rplidar_ros2_dir = get_package_share_directory('rplidar_ros2')
+    teb_launch_dir = os.path.join(
+        get_package_share_directory('teb_local_planner'), 'launch')
+    teb_param_dir = os.path.join(
+        get_package_share_directory('teb_local_planner'), 'params')
     turtlebot3_cartographer_prefix = get_package_share_directory('turtlebot3_cartographer')
-
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
@@ -43,16 +34,14 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
-
-    # Map fully qualified names to relative ones so the node's namespace can be prepended.
-    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
-    # https://github.com/ros/geometry2/issues/32
-    # https://github.com/ros/robot_state_publisher/pull/30
-    # TODO(orduno) Substitute with `PushNodeRemapping`
-    #              https://github.com/ros2/launch_ros/issues/56
+    laser_filters_params = LaunchConfiguration('laser_filters_params',default=os.path.join(bringup_dir, 'params', 'laser_filters.yaml'))
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
-
+                  ('/tf_static', 'tf_static'),
+                  ('scan','base_scan'),
+                  ('scan_filtered','scan'),
+                  ('chassis_imu','imu')]
+    # remappings = [('/tf', 'tf'),
+    #               ('/tf_static', 'tf_static')]
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
@@ -94,7 +83,8 @@ def generate_launch_description():
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        # default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+        default_value=os.path.join(teb_launch_dir, 'teb_params_add.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -104,7 +94,11 @@ def generate_launch_description():
     declare_use_composition_cmd = DeclareLaunchArgument(
         'use_composition', default_value='True',
         description='Whether to use composed bringup')
-
+        
+    DeclareLaunchArgument(
+        'laser_filters_params',
+         default_value=laser_filters_params,
+        description='config of laser_filters')
     # print("test"+PythonExpression(['not ', slam]))
 
     # Specify the actions
@@ -125,7 +119,8 @@ def generate_launch_description():
                               'autostart': autostart,
                               'params_file': params_file
                               }.items()),
-
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(rplidar_ros2_dir, 'launch','rplidar_launch.py'))),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir,
                                                        'localization_launch.py')),
@@ -135,7 +130,6 @@ def generate_launch_description():
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
                               'params_file': params_file}.items()),
-
         Node(
             condition=IfCondition(use_composition),
             package='nav2_bringup',
@@ -143,7 +137,19 @@ def generate_launch_description():
             output='screen',
             parameters=[configured_params, {'autostart': autostart}],
             remappings=remappings),
-
+        Node(
+            package='laser_filters',
+            executable = 'scan_to_scan_filter_chain',
+            output='screen',
+            parameters=[
+                PathJoinSubstitution([
+                    get_package_share_directory("nav2_bringup"),
+                    "params", "laser_filters.yaml",])],
+            remappings=remappings),
+        Node(
+            package='roborts_base',
+            executable='roborts_base_node',
+            remappings=remappings),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
             condition=IfCondition(PythonExpression(['not ', use_composition])),
@@ -151,6 +157,10 @@ def generate_launch_description():
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
                               'params_file': params_file}.items()),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments = ['-0.013308', '-0.10685', '-0.0825', '0', '0', '1.5708', 'base_link', 'lidar_link']),
     ])
 
     # Create the launch description and populate
