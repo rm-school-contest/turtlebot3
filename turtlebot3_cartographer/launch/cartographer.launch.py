@@ -23,7 +23,7 @@ from launch.substitutions import LaunchConfiguration
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
-
+from launch.substitutions import PathJoinSubstitution
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
@@ -35,10 +35,15 @@ def generate_launch_description():
     rplidar_ros2_dir = get_package_share_directory('rplidar_ros2')
     resolution = LaunchConfiguration('resolution', default='0.05')
     publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
-
+    # bringup_dir = get_package_share_directory('nav2_bringup')
     rviz_config_dir = os.path.join(get_package_share_directory('turtlebot3_cartographer'),
                                    'rviz', 'tb3_cartographer.rviz')
-
+    laser_filters_params = LaunchConfiguration('laser_filters_params',default=os.path.join(turtlebot3_cartographer_prefix, 'config', 'laser_filters.yaml'))
+    remappings = [('/tf', 'tf'),
+                  ('/tf_static', 'tf_static'),
+                  ('scan','base_scan'),
+                  ('scan_filtered','scan'),
+                  ('chassis_imu','imu')]
     return LaunchDescription([
         DeclareLaunchArgument(
             'cartographer_config_dir',
@@ -66,7 +71,10 @@ def generate_launch_description():
             'resolution',
             default_value=resolution,
             description='Resolution of a grid cell in the published occupancy grid'),
-
+        DeclareLaunchArgument(
+        'laser_filters_params',
+         default_value=laser_filters_params,
+        description='config of laser_filters'),
         DeclareLaunchArgument(
             'publish_period_sec',
             default_value=publish_period_sec,
@@ -80,10 +88,10 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(rplidar_ros2_dir, 'launch','rplidar_launch.py'))
         ),
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            arguments = ['-0.013308', '-0.10685', '-0.0825', '0', '0', '3.14159', 'base_link', 'lidar_link']),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments = ['-0.013308', '-0.10685', '-0.0825', '0', '0', '3.14159', 'base_link', 'lidar_link']),
         Node(
             package='rviz2',
             executable='rviz2',
@@ -91,11 +99,26 @@ def generate_launch_description():
             arguments=['-d', rviz_config_dir],
             parameters=[{'use_sim_time': use_sim_time}],
             output='screen'),
-        # Node(
-        #     package='tf2_ros',
-        #     executable='static_transform_publisher',
-        #     arguments = ['-0.013308', '-0.10685', '-0.0825', '0', '0', '3.14159', 'base_link', 'lidar_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0.18', '0', '0.262', '0', '3.141592654', '0', 'base_link', 'lidar_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['-0.18', '0', '0', '0', '0', '0', 'base_link', 'chassis_imu_link']),
         Node(
             package='roborts_base',
-            executable='roborts_base_node'),
+            executable='roborts_base_node',
+            remappings=remappings),
+
+        Node(
+            package='laser_filters',
+            executable = 'scan_to_scan_filter_chain',
+            output='screen',
+            parameters=[
+                PathJoinSubstitution([
+                    get_package_share_directory("turtlebot3_cartographer"),
+                    "config", "laser_filters.yaml",])],
+            remappings=remappings),
     ])

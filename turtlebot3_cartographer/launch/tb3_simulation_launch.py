@@ -107,6 +107,7 @@ def generate_launch_description():
         'params_file',
         # default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
         default_value=os.path.join(teb_param_dir, 'teb_params_add.yaml'),
+        #  default_value=os.path.join(teb_launch_dir, 'teb_params_add.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
@@ -119,8 +120,10 @@ def generate_launch_description():
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
-        default_value=os.path.join(
-            bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+        # default_value=os.path.join(
+        #     bringup_dir, 'rviz', 'nav2_default_view.rviz'),
+        default_value= os.path.join(
+        teb_launch_dir,  'teb_visual.rviz'),
         description='Full path to the RVIZ config file to use')
 
     # declare_use_simulator_cmd = DeclareLaunchArgument(
