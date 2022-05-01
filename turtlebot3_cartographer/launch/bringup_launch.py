@@ -25,6 +25,7 @@ def generate_launch_description():
     teb_param_dir = os.path.join(
         get_package_share_directory('teb_local_planner'), 'params')
     turtlebot3_cartographer_prefix = get_package_share_directory('turtlebot3_cartographer')
+    turtlebot3_cartographer_dir = os.path.join(turtlebot3_cartographer_prefix, 'launch')
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
@@ -148,11 +149,27 @@ def generate_launch_description():
                     "params", "laser_filters.yaml",])],
             remappings=remappings),
         Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0.18', '0', '0.262', '0', '3.141592654', '0', 'base_link', 'lidar_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['-0.18', '0', '0', '0', '0', '0', 'base_link', 'chassis_imu_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0.21', '0', '0.35', '1.5707', '0', '1.85877', 'base_link', 'camera_link']),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments = ['0.21', '0.01', '0.35', '0', '0.27925', '3.141592654', 'base_link', 'ncaa_link']),
+        Node(
             package='roborts_base',
             executable='roborts_base_node',
             remappings=remappings),
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
+            PythonLaunchDescriptionSource(os.path.join(turtlebot3_cartographer_dir, 'navigation_launch.py')),
             condition=IfCondition(PythonExpression(['not ', use_composition])),
             launch_arguments={'namespace': namespace,
                               'use_sim_time': use_sim_time,

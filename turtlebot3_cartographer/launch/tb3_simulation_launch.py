@@ -98,10 +98,10 @@ def generate_launch_description():
                         # bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
 
-    # declare_use_sim_time_cmd = DeclareLaunchArgument(
-    #     'use_sim_time',
-    #     default_value='true',
-    #     description='Use simulation (Gazebo) clock if true')
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock if true')
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
@@ -182,16 +182,16 @@ def generate_launch_description():
     with open(urdf, 'r') as infp:
         robot_description = infp.read()
 
-    start_robot_state_publisher_cmd = Node(
-        condition=IfCondition(use_robot_state_pub),
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        namespace=namespace,
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time,
-                     'robot_description': robot_description}],
-        remappings=remappings)
+    # start_robot_state_publisher_cmd = Node(
+    #     condition=IfCondition(use_robot_state_pub),
+    #     package='robot_state_publisher',
+    #     executable='robot_state_publisher',
+    #     name='robot_state_publisher',
+    #     namespace=namespace,
+    #     output='screen',
+    #     parameters=[{'use_sim_time': use_sim_time,
+    #                  'robot_description': robot_description}],
+    #     remappings=remappings)
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -233,7 +233,7 @@ def generate_launch_description():
     # ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_robot_state_pub_cmd)
     ld.add_action(declare_use_rviz_cmd)
-    ld.add_action(start_robot_state_publisher_cmd)
+    # ld.add_action(start_robot_state_publisher_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
 

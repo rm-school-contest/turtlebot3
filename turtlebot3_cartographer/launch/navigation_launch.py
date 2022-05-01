@@ -38,7 +38,8 @@ def generate_launch_description():
                        'planner_server',
                        'recoveries_server',
                        'bt_navigator',
-                       'waypoint_follower']
+                       'waypoint_follower',
+                       'map_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -131,7 +132,14 @@ def generate_launch_description():
             output='screen',
             parameters=[configured_params],
             remappings=remappings),
-
+        Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='map_server',
+            output='screen',
+            parameters=[{'yaml_filename': "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map.yaml"},
+                        {'use_sim_time': use_sim_time}],
+            remappings=remappings),
         Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',

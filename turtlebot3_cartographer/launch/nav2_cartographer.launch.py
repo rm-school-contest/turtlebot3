@@ -36,18 +36,18 @@ def generate_launch_description():
     cartographer_config_dir = LaunchConfiguration('cartographer_config_dir', default=os.path.join(
                                                   turtlebot3_cartographer_prefix, 'config'))
     configuration_basename = LaunchConfiguration('configuration_basename',
-                                                 default='turtlebot3_lds_2d.lua')
-
+                                                 default='pure_localization.lua')
+    load_state_filename = LaunchConfiguration('load_state_filename',default='map.pbstream')
     resolution = LaunchConfiguration('resolution', default='0.05')
     publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
 
     rviz_config_dir = os.path.join(get_package_share_directory('turtlebot3_cartographer'),
                                    'rviz', 'tb3_cartographer.rviz')
     teb_launch_dir = os.path.join(
-        get_package_share_directory('teb_local_planner'), 'launch')
+        get_package_share_directory('teb_local_planner'), 'params')
     namespace = LaunchConfiguration('namespace')
     autostart = LaunchConfiguration('autostart')
-    lifecycle_nodes = ['map_saver']
+    lifecycle_nodes = ['map_saver','map_server']
 
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='True',
@@ -105,6 +105,10 @@ def generate_launch_description():
             default_value=configuration_basename,
             description='Name of lua file for cartographer'),
         DeclareLaunchArgument(
+            'load_state_filename',
+            default_value=load_state_filename,
+            description='Name of .pbstream file for cartographer'),
+        DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
             # default_value='true',
@@ -117,20 +121,28 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': use_sim_time}],
             arguments=['-configuration_directory', cartographer_config_dir,
-                       '-configuration_basename', configuration_basename]),
+                       '-configuration_basename', configuration_basename,
+                       '-load_state_filename', "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map5.pbstream",
+                       ]),
         
-        
-
+        Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='map_server',
+            output='screen',
+            parameters=[{'yaml_filename': "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map5.yaml"},
+                        {'use_sim_time': use_sim_time}]),
         DeclareLaunchArgument(
             'publish_period_sec',
             default_value=publish_period_sec,
             description='OccupancyGrid publishing period'),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/occupancy_grid.launch.py']),
-            launch_arguments={'use_sim_time': use_sim_time, 'resolution': resolution,
-                              'publish_period_sec': publish_period_sec}.items(),
-        ),])
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/occupancy_grid.launch.py']),
+        #     launch_arguments={'use_sim_time': use_sim_time, 'resolution': resolution,
+        #                       'publish_period_sec': publish_period_sec}.items(),
+        # )
+         ])
     ld.add_action(declare_autostart_cmd)
     ld.add_action(start_map_saver_server_cmd)
     ld.add_action(start_lifecycle_manager_cmd)

@@ -107,6 +107,18 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             arguments = ['-0.18', '0', '0', '0', '0', '0', 'base_link', 'chassis_imu_link']),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments = ['0.18', '0', '0.262', '0', '3.141592654', '0', 'base_link', 'lidar_link']),
+        # Node(
+        #     package='tf2_ros',
+        #     executable='static_transform_publisher',
+        #     arguments = ['-0.18', '0', '0', '0', '0', '0', 'base_link', 'chassis_imu_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0.21', '0', '0.35', '1.5707', '0', '1.85877', 'base_link', 'camera_link']),
         Node(
             package='roborts_base',
             executable='roborts_base_node',
