@@ -35,6 +35,9 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
+    use_debug = LaunchConfiguration('use_debug')
+
+
     laser_filters_params = LaunchConfiguration('laser_filters_params',default=os.path.join(bringup_dir, 'params', 'laser_filters.yaml'))
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static'),
@@ -72,6 +75,10 @@ def generate_launch_description():
         'slam',
         default_value='False',
         description='Whether run a SLAM')
+
+    declare_use_debug_cmd = DeclareLaunchArgument(
+        'use_debug', default_value='False',
+        description='Whether to use gdb')
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
@@ -133,11 +140,26 @@ def generate_launch_description():
                               'autostart': autostart,
                               'params_file': params_file}.items()),
         Node(
-            condition=IfCondition(use_composition),
+            condition=IfCondition(PythonExpression(
+                ['not ', use_debug, ' and ', use_composition])),
             package='nav2_bringup',
             executable='composed_bringup',
             output='screen',
             parameters=[configured_params, {'autostart': autostart}],
+            remappings=remappings),
+        Node(
+            condition=IfCondition(PythonExpression(
+                [use_debug, ' and ', use_composition])),
+            package='nav2_bringup',
+            executable='composed_bringup',
+            output='screen',
+            parameters=[configured_params, {'autostart': autostart}],
+            # prefix=[
+            #     'stterm -g 200x60 -e gdb -ex run --args'],
+            # prefix=[
+            #     'screen -d -m gdb -ex run --args'],
+            prefix=['valgrind'],
+                
             remappings=remappings),
         Node(
             package='laser_filters',
@@ -145,13 +167,13 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 PathJoinSubstitution([
-                    get_package_share_directory("nav2_bringup"),
-                    "params", "laser_filters.yaml",])],
+                    get_package_share_directory("turtlebot3_cartographer"),
+                    "config", "laser_filters.yaml",])],
             remappings=remappings),
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ['0.18', '0', '0.262', '0', '3.141592654', '0', 'base_link', 'lidar_link']),
+            arguments = ['-0.038', '0.107', '-0.10', '0', '0', '3.14159265', 'base_link', 'lidar_link']),
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
@@ -160,6 +182,10 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             arguments = ['0.21', '0', '0.35', '1.5707', '0', '1.85877', 'base_link', 'camera_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0', '0', '0', '0', '0', '0', 'base_link', 'local_adjust_link']),
         # Node(
         #     package='tf2_ros',
         #     executable='static_transform_publisher',

@@ -11,3 +11,27 @@ scan_to_scan_filter_chain:
         min_x: -0.5
         min_y: -0.3
         min_z: -0.5
+    # filter2:
+    #   name: speckle_filter
+    #   type: laser_filters/LaserScanSpeckleFilter
+    #   params:
+    #     filter_type: 0
+    #     max_range: 4.0
+    #     max_range_difference: 0.1
+    #     filter_window: 2
+    # filter3:
+    #   name: range
+    #   type: laser_filters/LaserScanRangeFilter
+    #   params:
+    #     use_message_range_limits: false
+    #     lower_threshold: 4.0
+    #     upper_threshold: .inf
+    #     lower_replacement_value: -.inf
+    #     upper_replacement_value: .inf
+    # filter3:
+    #   name: intensity
+    #   type: laser_filters/LaserScanIntensityFilter
+    #   params:
+    #     lower_threshold: 0
+    #     upper_threshold: 100000
+    #     disp_histogram: 0

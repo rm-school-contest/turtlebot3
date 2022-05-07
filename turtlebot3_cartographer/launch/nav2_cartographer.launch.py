@@ -122,7 +122,7 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
             arguments=['-configuration_directory', cartographer_config_dir,
                        '-configuration_basename', configuration_basename,
-                       '-load_state_filename', "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map5.pbstream",
+                       '-load_state_filename', "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map1.pbstream",
                        ]),
         
         Node(
@@ -130,7 +130,7 @@ def generate_launch_description():
             executable='map_server',
             name='map_server',
             output='screen',
-            parameters=[{'yaml_filename': "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map5.yaml"},
+            parameters=[{'yaml_filename': "/home/njtech/RMUA_WS/src/turtlebot3/turtlebot3_cartographer/config/map1.yaml"},
                         {'use_sim_time': use_sim_time}]),
         DeclareLaunchArgument(
             'publish_period_sec',

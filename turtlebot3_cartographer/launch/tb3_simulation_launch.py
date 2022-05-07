@@ -46,6 +46,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
+    use_debug = LaunchConfiguration('use_debug')
 
     # Launch configuration variables specific to simulation
     rviz_config_file = LaunchConfiguration('rviz_config_file')
@@ -97,6 +98,10 @@ def generate_launch_description():
             bringup_dir, 'maps', 'map.yaml'),
                         # bringup_dir, 'maps', 'turtlebot3_world.yaml'),
         description='Full path to map file to load')
+
+    declare_use_debug_cmd = DeclareLaunchArgument(
+        'use_debug', default_value='False',
+        description='Whether to use gdb')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -214,13 +219,15 @@ def generate_launch_description():
                           'use_sim_time': use_sim_time,
                           'params_file': params_file,
                           'autostart': autostart,
-                          'use_composition': use_composition}.items())
+                          'use_composition': use_composition,
+                          'use_debug': use_debug}.items())
 
     # Create the launch description and populate
     ld = LaunchDescription()
 
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
+    ld.add_action(declare_use_debug_cmd)
     ld.add_action(declare_use_namespace_cmd)
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)

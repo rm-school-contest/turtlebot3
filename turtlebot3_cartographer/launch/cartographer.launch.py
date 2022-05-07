@@ -102,11 +102,15 @@ def generate_launch_description():
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            arguments = ['0.18', '0', '0.262', '0', '3.141592654', '0', 'base_link', 'lidar_link']),
+            arguments = ['-0.038', '0.107', '-0.10', '0', '0', '3.14159265', 'base_link', 'lidar_link']),
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             arguments = ['-0.18', '0', '0', '0', '0', '0', 'base_link', 'chassis_imu_link']),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0', '0', '0', '0', '0', '0', 'base_link', 'local_adjust_link']),
         # Node(
         #     package='tf2_ros',
         #     executable='static_transform_publisher',
